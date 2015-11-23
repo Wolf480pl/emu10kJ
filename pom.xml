@@ -1,0 +1,302 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  
+  <!-- Project information -->
+  <name>emu10kJ</name>
+  <groupId>com.github.wolf480pl</groupId>
+  <artifactId>emu10kj</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <url>http://github.com/Wolf480pl/${repoName}</url>
+  <inceptionYear>2015</inceptionYear>
+  <packaging>jar</packaging>
+  <description>Java implementation of emu10kX DSP found in SoundBlaster Live! and Audigy soundcards</description>
+
+  <parent>
+    <groupId>org.sonatype.oss</groupId>
+    <artifactId>oss-parent</artifactId>
+    <version>9</version>
+  </parent>
+
+  <!-- Build properties -->
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <author>Wolf480pl</author>
+    <email>wolf480@interia.pl</email>
+    <repoName>emu10kJ</repoName>
+    <ciSystem>unknown</ciSystem>
+    <buildNumber>0</buildNumber>
+    <commit>unknown</commit>
+  </properties>
+  
+  <!-- Developers -->
+  <developers>
+    <developer>
+      <id>wolf480pl</id>
+      <name>Wolf480pl</name>
+      <email>wolf480@interia.pl</email>
+    </developer>
+  </developers>
+
+  <!-- License information -->
+  <licenses>
+    <license>
+      <name>GNU Lesser General Public License Version 3</name>
+      <url>https://www.gnu.org/licenses/lgpl-3.0-standalone.html</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <!-- Source code access -->
+  <scm>
+    <url>http://github.com/Wolf480pl/${repoName}</url>
+    <connection>scm:git:git://github.com/Wolf480pl/${repoName}.git</connection>
+    <developerConnection>scm:git:git@github.com:Wolf480pl/${repoName}.git</developerConnection>
+    <tag>HEAD</tag>
+  </scm>
+  
+  <!-- Continuous integration -->
+  <!--
+  <ciManagement>
+    <system>travis</system>
+    <url>https://travis-ci.org/Wolf480pl/${repoName}</url>
+  </ciManagement>
+   -->
+  
+  <!-- Issue tracking -->
+  <issueManagement>
+    <system>github</system>
+    <url>https://github.com/Wolf480pl/${repoName}/issues</url>
+  </issueManagement>
+  
+  <!-- Distrubution repositories -->
+  <!--
+  <distributionManagement>
+    <snapshotRepository>
+      <id>wolf480pl-snapshots</id>
+      <name>Wolf480pl Nexus Snapshots</name>
+      <url>http://nex-wolf480pl.rhcloud.com/nexus/content/repositories/snapshots/</url>
+    </snapshotRepository>
+    <repository>
+      <id>wolf480pl-releases</id>
+      <name>Wolf480pl Nexus Releases</name>
+      <url>http://nex-wolf480pl.rhcloud.com/nexus/content/repositories/releases/</url>
+    </repository>
+    <site>
+      <id>wolf480pl-site</id>
+      <url>dav:http://nex-wolf480pl.rhcloud.com/nexus/content/sites/${project.artifactId}-site/</url>
+    </site>
+  </distributionManagement>
+   -->
+  
+  <!-- Dependencies -->
+  <dependencies>
+    <!--<dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>1.7.7</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-api</artifactId>
+      <version>2.0.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <version>2.0.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j-impl</artifactId>
+      <version>2.0.2</version>
+      <scope>test</scope>
+    </dependency>-->
+  </dependencies>
+
+  <!-- Build configuration -->
+  <build>
+    <defaultGoal>clean install</defaultGoal>
+
+    <!-- Resources to include -->
+    <resources>
+      <!-- Static resources -->
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+      <resource>
+        <filtering>false</filtering>
+        <directory>.</directory>
+        <targetPath>.</targetPath>
+        <includes>
+          <include>LICENSE.txt</include>
+        </includes>
+      </resource>
+    </resources>
+    
+    <!-- Build plugins -->
+    <plugins>
+      <!-- License header plugin -->
+      <plugin>
+        <groupId>com.mycila.maven-license-plugin</groupId>
+        <artifactId>maven-license-plugin</artifactId>
+        <version>1.10.b1</version>
+        <executions>
+          <execution>
+            <configuration>
+              <properties>
+                <!--<name>${project.name}</name>-->
+                <url>${email}</url>
+                <inceptionYear>${project.inceptionYear}</inceptionYear>
+                <organization>${author}</organization>
+              </properties>
+              <quiet>true</quiet>
+              <encoding>UTF-8</encoding>
+              <strictCheck>true</strictCheck>
+              <header>HEADER.txt</header>
+              <mapping>
+                <java>SLASHSTAR_STYLE</java>
+              </mapping>
+              <keywords>
+                <!--<keyword>${project.name}</keyword>-->
+                <keyword>${author}</keyword>
+                <keyword>license</keyword>
+              </keywords>
+              <includes>
+                <include>src/main/java/**</include>
+                <include>src/test/java/**</include>
+              </includes>
+            </configuration>
+            <phase>clean</phase>
+            <goals>
+              <goal>format</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- Source compiler plugin -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.0</version>
+        <configuration>
+          <source>1.7</source>
+          <target>1.7</target>
+          <compilerArguments>
+            <O>-Xlint:all</O>
+            <O>-Xlint:-path</O>
+          </compilerArguments>
+          <showWarnings>true</showWarnings>
+          <showDeprecation>true</showDeprecation>
+        </configuration>
+      </plugin>
+      <!-- JAR creation plugin -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>2.4</version>
+        <configuration>
+          <archive>
+            <manifestEntries>
+              <Implementation-Title>${project.name}</Implementation-Title>
+              <Implementation-Version>${project.version}+${ciSystem}-b${buildNumber}.git-${commit}</Implementation-Version>
+              <Implementation-Vendor>${author}</Implementation-Vendor>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+      <!-- Maven release plugin --> 
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-release-plugin</artifactId>
+        <version>2.5.1</version>
+        <configuration>
+          <localCheckout>true</localCheckout>
+          <pushChanges>false</pushChanges>
+        </configuration>
+      </plugin>
+      <!-- Maven site plugin -->
+      <plugin>    
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-site-plugin</artifactId>
+        <version>3.3</version>
+        <dependencies>
+          <dependency>
+            <groupId>org.apache.maven.doxia</groupId>
+            <artifactId>doxia-module-markdown</artifactId>
+            <version>1.3</version>
+          </dependency>
+          <dependency>
+            <groupId>org.apache.maven.wagon</groupId>
+            <artifactId>wagon-webdav-jackrabbit</artifactId>
+            <version>2.5</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+    </plugins>
+  </build>
+  
+  <reporting>
+    <plugins>
+      <plugin>
+        <artifactId>maven-changelog-plugin</artifactId>
+        <version>2.2</version>
+      </plugin>
+      <plugin>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.9.1</version>
+        <configuration>
+          <detectLinks>true</detectLinks>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>taglist-maven-plugin</artifactId>
+        <version>2.4</version>
+      </plugin>
+    </plugins>
+  </reporting>
+    
+  <!-- Build profiles -->
+  <profiles>
+    <!-- Site GitHub deployment -->
+    <profile>
+      <id>github-site-deploy</id>
+      <activation>
+        <property>
+          <name>!ciSystem</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>    
+            <artifactId>maven-site-plugin</artifactId>
+            <configuration>
+              <skipDeploy>true</skipDeploy>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>com.github.github</groupId>
+            <artifactId>site-maven-plugin</artifactId>
+            <version>0.9</version>
+            <executions>
+              <execution>
+                <configuration>
+                  <server>github-deploy</server>
+                  <branch>refs/heads/gh-pages</branch>
+                  <message>Site for ${project.name} ${project.version}-b${buildNumber}</message>
+                </configuration>
+                <phase>site-deploy</phase>
+                <goals>
+                  <goal>site</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>
