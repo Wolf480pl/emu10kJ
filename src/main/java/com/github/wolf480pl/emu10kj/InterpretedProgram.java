@@ -18,8 +18,8 @@
 package com.github.wolf480pl.emu10kj;
 
 public class InterpretedProgram implements Program {
-    public final int MAX_VALUE = 0x7FFFFFFF;
-    public final int MIN_VALUE = 0x80000000;
+    public static final int MAX_VALUE = Integer.MAX_VALUE;
+    public static final int MIN_VALUE = Integer.MIN_VALUE;
 
     private final Instruction[] code;
     private final int gprs, itram, xtram;
@@ -52,83 +52,104 @@ public class InterpretedProgram implements Program {
     }
 
     @Override
-    public long run(long acc, int[] gpr, int[] itram, int[] xtram) {
+    public void run(DSP dsp) {
         for (Instruction instr : code) {
+            long acc;
+            int r;
+
+            long la = gprOrAcc(instr.getRegA(), dsp);
+            int a = (int) la;
+
+            int x = dsp.readMemDsp(instr.getRegX());
+            int y = dsp.readMemDsp(instr.getRegY());
+            // to ensure long multiplication/comparison/addition is used
+            long lx = x;
+            long ly = y;
+
             byte opcode = instr.getOpcode();
-            // TODO: implement TRAM
             switch (opcode) {
                 case Opcodes.MACS:
                 case Opcodes.MACSN:
                 case Opcodes.MACW:
-                case Opcodes.MACWN: {
-                    acc += gprOrAcc(instr.getRegA(), acc, gpr);
-                    long x = gpr[instr.getRegX()];
-                    long y = gpr[instr.getRegY()];
-                    acc = mac(acc, gpr, instr.getRegR(), x, y, 31, (opcode & (byte) 0x1) != 0, (opcode & (byte) 0x2) == 0);
-                }
-                break;
+                case Opcodes.MACWN:
+                    mac(la, dsp, instr.getRegR(), lx, ly, 31, (opcode & (byte) 0x1) != 0, (opcode & (byte) 0x2) == 0);
+                    break;
                 case Opcodes.MACINTS:
-                case Opcodes.MACINTW: {
-                    acc += gprOrAcc(instr.getRegA(), acc, gpr);
-                    long x = gpr[instr.getRegX()];
-                    long y = gpr[instr.getRegY()];
+                case Opcodes.MACINTW:
                     /*
                      * TODO: With MACINTW, the result is wrapped around but the
                      * sign bit (bit 31) is zeroed. Essentially the wrap around
                      * occurs around bit 30 instead of bit 31 (I have no idea
                      * why this would be useful).
                      */
-                    acc = mac(acc, gpr, instr.getRegR(), x, y, 0, false, (opcode & (byte) 0x1) == 0);
-                }
-                break;
-                case Opcodes.ACC3: {
-                    acc += gprOrAcc(instr.getRegA(), acc, gpr);
-                    long x = gpr[instr.getRegX()];
-                    long y = gpr[instr.getRegY()];
-                    acc += x + y;
-                    gpr[instr.getRegR()] = (int) clamp(acc);
-                }
-                break;
-                case Opcodes.MACMV: {
-                    gpr[instr.getRegR()] = (int) gprOrAcc(instr.getRegA(), acc, gpr);
-                    long x = gpr[instr.getRegX()];
-                    long y = gpr[instr.getRegY()];
-                    // TODO: You sure there's no shift here?
-                    acc += x * y;
-                }
-                break;
-                case Opcodes.ANDXOR:
-                    acc = gpr[instr.getRegR()] = (gpr[instr.getRegA()] & gpr[instr.getRegX()]) ^ gpr[instr.getRegY()];
+                    mac(la, dsp, instr.getRegR(), lx, ly, 0, false, (opcode & (byte) 0x1) == 0);
                     break;
-                case Opcodes.TESTNEG: {
-                    int x = gpr[instr.getRegX()];
-                    acc = gpr[instr.getRegR()] = (gpr[instr.getRegA()] >= gpr[instr.getRegY()]) ? x : -x;
-                }
-                break;
+                case Opcodes.ACC3:
+                    acc = la + lx + ly;
+                    dsp.writeMemDsp(instr.getRegR(), (int) clamp(acc));
+                    dsp.writeAccu(acc);
+
+                    break;
+                case Opcodes.MACMV:
+                    // Even if A is accu and R is accu, it will get overwritten
+                    // later anyway, so don't bother with longs
+                    dsp.writeMemDsp(instr.getRegR(), a);
+                    // TODO: You sure there's no shift here?
+                    acc = dsp.readAccu();
+                    acc += lx * ly;
+                    dsp.writeAccu(acc);
+                    break;
+                case Opcodes.ANDXOR:
+                    // Even if A is accu, the higher bits will be zero after
+                    // anding with X, so don't bother with longs
+                    acc = (a & x) ^ y;
+                    wrAccAndR(dsp, instr.getRegR(), acc);
+
+                    break;
+                case Opcodes.TESTNEG:
+                    // Use long for comparing A and Y, cause A can be accu.
+                    // Don't use long for result, cause it's either X or -X,
+                    // which is always 32 bits
+                    r = (la >= ly) ? x : -x;
+                    wrAccAndR(dsp, instr.getRegR(), r);
+
+                    break;
                 case Opcodes.LIMIT:
                 case Opcodes.LIMITL: {
-                    int x = gpr[instr.getRegX()];
-                    int y = gpr[instr.getRegY()];
                     boolean neg = (opcode & (byte) 0x1) > 0;
-                    acc = gpr[instr.getRegR()] = ((gpr[instr.getRegA()] >= y) != neg) ? x : y;
+                    // Use long for comparing A and Y, cause A can be accu.
+                    // Don't use long for result, cause it's either X or Y,
+                    // which is always 32 bits
+                    // We use != as boolean XOR
+                    r = ((la >= ly) != neg) ? x : y;
+                    wrAccAndR(dsp, instr.getRegR(), r);
                 }
                 break;
 
             }
         }
-        return acc;
     }
 
-    private long mac(long acc, int[] gpr, int regR, long x, long y, int shift, boolean neg, boolean sat) {
+    private static void wrAccAndR(DSP dsp, short regR, long acc) {
+        dsp.writeMemDsp(regR, (int) acc);
+        dsp.writeAccu(acc);
+    }
+
+    private static void wrAccAndR(DSP dsp, short regR, int r) {
+        dsp.writeMemDsp(regR, r);
+        dsp.writeAccu(r);
+    }
+
+    private static void mac(long acc, DSP dsp, short regR, long x, long y, int shift, boolean neg, boolean sat) {
         if (neg) {
             x = -x;
         }
         acc += (x * y) >> shift;
-        gpr[regR] = (int) (sat ? clamp(acc) : acc);
-        return acc;
+        dsp.writeMemDsp(regR, (int) (sat ? clamp(acc) : acc));
+        dsp.writeAccu(acc);
     }
 
-    private long clamp(long x) {
+    private static long clamp(long x) {
         if (x > MAX_VALUE) {
             return MAX_VALUE;
         } else if (x < MIN_VALUE) {
@@ -137,11 +158,8 @@ public class InterpretedProgram implements Program {
         return x;
     }
 
-    private static long gprOrAcc(int idx, long acc, int[] gpr) {
-        if (idx == -1) {
-            return acc;
-        }
-        return gpr[idx];
+    private static long gprOrAcc(short addr, DSP dsp) {
+        return dsp.readMemOrAccuDsp(addr);
     }
 
 }

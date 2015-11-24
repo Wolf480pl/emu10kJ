@@ -19,9 +19,9 @@ package com.github.wolf480pl.emu10kj;
 
 public class Instruction {
     private final byte opcode;
-    private final int regR, regA, regX, regY;
+    private final short regR, regA, regX, regY;
 
-    public Instruction(byte opcode, int regR, int regA, int regX, int regY) {
+    public Instruction(byte opcode, short regR, short regA, short regX, short regY) {
         this.opcode = opcode;
         this.regR = regR;
         this.regA = regA;
@@ -33,19 +33,19 @@ public class Instruction {
         return opcode;
     }
 
-    public int getRegR() {
+    public short getRegR() {
         return regR;
     }
 
-    public int getRegA() {
+    public short getRegA() {
         return regA;
     }
 
-    public int getRegX() {
+    public short getRegX() {
         return regX;
     }
 
-    public int getRegY() {
+    public short getRegY() {
         return regY;
     }
 

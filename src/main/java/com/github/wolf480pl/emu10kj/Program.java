@@ -27,5 +27,5 @@ public interface Program {
 
     int getXtramSize();
 
-    long run(long acc, int[] gpr, int[] itram, int[] xtram);
+    void run(DSP dsp);
 }

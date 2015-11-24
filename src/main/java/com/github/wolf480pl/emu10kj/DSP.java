@@ -19,4 +19,13 @@ package com.github.wolf480pl.emu10kj;
 
 public interface DSP {
 
+    int readMemDsp(short address);
+
+    void writeMemDsp(short address, int value);
+
+    long readAccu();
+
+    void writeAccu(long value);
+
+    long readMemOrAccuDsp(short address);
 }
