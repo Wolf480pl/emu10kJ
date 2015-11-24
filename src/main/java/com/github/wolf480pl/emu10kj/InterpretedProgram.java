@@ -97,6 +97,22 @@ public class InterpretedProgram implements Program {
                     acc += x * y;
                 }
                 break;
+                case Opcodes.ANDXOR:
+                    acc = gpr[instr.getRegR()] = (gpr[instr.getRegA()] & gpr[instr.getRegX()]) ^ gpr[instr.getRegY()];
+                    break;
+                case Opcodes.TESTNEG: {
+                    int x = gpr[instr.getRegX()];
+                    acc = gpr[instr.getRegR()] = (gpr[instr.getRegA()] >= gpr[instr.getRegY()]) ? x : -x;
+                }
+                break;
+                case Opcodes.LIMIT:
+                case Opcodes.LIMITL: {
+                    int x = gpr[instr.getRegX()];
+                    int y = gpr[instr.getRegY()];
+                    boolean neg = (opcode & (byte) 0x1) > 0;
+                    acc = gpr[instr.getRegR()] = ((gpr[instr.getRegA()] >= y) != neg) ? x : y;
+                }
+                break;
 
             }
         }
