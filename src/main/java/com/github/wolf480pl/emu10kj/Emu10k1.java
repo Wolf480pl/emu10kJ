@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2015 Wolf480pl <wolf480@interia.pl>
  * This program is licensed under the GNU Lesser General Public License.
@@ -84,68 +85,16 @@ public class Emu10k1 implements DSP {
 
     @Override
     public int readMemDsp(short address) {
-        if (address <= FX_END) {
-            return fxbus.readIn(address - FX_START);
-        } else if (address <= EXT_IN_END) {
-            return extIO.readIn(address - EXT_IN_START);
-        } else if (address <= EXT_OUT_END) {
-            return extIO.readOut(address - EXT_OUT_START);
-        } else if (address <= FX2_END) {
-            return fxbus.readOut(address - FX2_START);
-        } else if (address <= CONST_END) {
-            return CONSTS[address - CONST_START];
-        } else if (address == ACCU) {
-            /*
-             * From DSP perspective, ACCU can be only read with
-             * readMemOrAccuDsp() (i.e. when used as A) or with
-             * readAccu() (in case of MACMV).
-             * Otherwise, it's just zero.
-             */
-            return 0;
-        } else if (address == CCR) {
-            return ccr;
-        } else if (address == NOISE1) {
-            return noise1;
-        } else if (address == NOISE2) {
-            return noise2;
-        } else if (address == INTERRUPT) {
-            return 0; // TODO: is it ok?
-        } else if (address == DBAC) {
-            return DBAC;
-        } else if (address < GPR_START) {
-            // Reserved / unknown
-            return 0;
-        } else if (address <= GPR_END) {
-            return gpr[address - GPR_START];
-        } else if (address <= ITRAM_DATA_END) {
-            int idx = address - ITRAM_DATA_START;
-            return iTram.read(tramAddr(itramAddr[idx]));
-        } else if (address <= XTRAM_DATA_END) {
-            int idx = address - XTRAM_DATA_START;
-            return xTram.read(tramAddr(xtramAddr[idx]));
-        } else if (address < ITRAM_ADDR_START) {
-            // Reserved
-            return 0;
-        } else if (address <= ITRAM_ADDR_END) {
-            int idx = address - ITRAM_DATA_START;
-            return itramAddr[idx];
-        } else if (address <= XTRAM_ADDR_END) {
-            int idx = address - XTRAM_DATA_START;
-            return xtramAddr[idx];
-        } else {
-            // Reserved
-            return 0;
-        }
-    }
-
-    private int tramAddr(int offset) {
-        return 0; // TODO
+        return dspSpace.read(address);
     }
 
     @Override
     public void writeMemDsp(short address, int value) {
-        // TODO Auto-generated method stub
+        dspSpace.write(address, value);
+    }
 
+    public AddressSpace dspAddressSpace() {
+        return dspSpace;
     }
 
     @Override
@@ -171,16 +120,73 @@ public class Emu10k1 implements DSP {
     public static final Constants CONSTANTS = new Constants(CONSTS);
     
     protected class SysSpace implements AddressSpace {
+        public static final int L_ACCU = ACCU - CONST_START;
+        public static final int L_CCR = CCR - CONST_START;
+        public static final int L_NOISE1 = NOISE1 - CONST_START;
+        public static final int L_NOISE2 = NOISE2 - CONST_START;
+        public static final int L_INTERRUPT = INTERRUPT - CONST_START;
+        public static final int L_DBAC = DBAC - CONST_START;
+
         @Override
         public int read(int addr) {
-            // TODO Auto-generated method stub
-            return 0;
+            if (addr < CONSTS.length) {
+                return CONSTS[addr];
+            }
+            switch (addr) {
+                case L_ACCU:
+                    /*
+                     * From DSP perspective, ACCU can be only read with
+                     * readMemOrAccuDsp() (i.e. when used as A) or with
+                     * readAccu() (in case of MACMV).
+                     * Otherwise, it's just zero.
+                     */
+                    return 0;
+                case L_CCR:
+                    return ccr;
+                case L_NOISE1:
+                    return noise1;
+                case L_NOISE2:
+                    return noise2;
+                case L_INTERRUPT:
+                    return 0; // TODO: is it ok?
+                case L_DBAC:
+                    return dbac;
+                default:
+                    // Reserved / unknown
+                    return 0;
+            }
         }
 
         @Override
         public void write(int addr, int value) {
-            // TODO Auto-generated method stub
-            
+            if (addr < CONSTS.length) {
+                return; // No writing to constants, baka!
+            }
+            switch (addr) {
+                case L_ACCU:
+                case L_CCR:
+                    /*
+                     * No reason to write to these, as they'll get
+                     * immediately overwriten (during the same instruction)
+                     */
+                     // falls thru to NOISE
+                case L_NOISE1:
+                case L_NOISE2:
+                    // read only
+                    break;
+                case L_INTERRUPT:
+                    if (value < 0) {
+                        //TODO: trigger interrupt
+                    }
+                    break;
+                case L_DBAC:
+                    // TODO should we allow this?
+                    dbac = value;
+                    break;
+                default:
+                    // Reserved / unknown, so NOP
+                    break;
+            }
         }
     }
     

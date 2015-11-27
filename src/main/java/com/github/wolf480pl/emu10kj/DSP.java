@@ -23,6 +23,8 @@ public interface DSP {
 
     void writeMemDsp(short address, int value);
 
+    AddressSpace dspAddressSpace();
+
     long readAccu();
 
     void writeAccu(long value);
