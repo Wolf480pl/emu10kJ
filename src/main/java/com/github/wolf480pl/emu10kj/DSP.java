@@ -30,4 +30,8 @@ public interface DSP {
     void writeAccu(long value);
 
     long readMemOrAccuDsp(short address);
+
+    void loadProgram(Program program);
+
+    void tick();
 }

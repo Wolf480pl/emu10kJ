@@ -63,7 +63,7 @@ public class Emu10k1 implements DSP {
     private int ccr;
     private Random rng1, rng2;
     private int noise1, noise2;
-    private int dbac;
+    private int dbac = 0;
     private TramSpace.OffsetReg tramOffset = new TramOffset();
     private final int[] gpr = new int[GPR_COUNT];
     private final int[] itramAddr = new int[ITRAM_REGS];
@@ -71,6 +71,7 @@ public class Emu10k1 implements DSP {
     private final TRAM iTram = new TRAM(ITRAM_SIZE);
     private final AddressSpace xTram;
     private final AddressSpace dspSpace;
+    private Program program = null;
 
     public Emu10k1(IO fxbus, IO extIO, AddressSpace xTram) {
         this.fxbus = fxbus;
@@ -99,6 +100,7 @@ public class Emu10k1 implements DSP {
         dspSpace.write(address, value);
     }
 
+    @Override
     public AddressSpace dspAddressSpace() {
         return dspSpace;
     }
@@ -119,6 +121,19 @@ public class Emu10k1 implements DSP {
             return accu;
         }
         return readMemDsp(address);
+    }
+
+    @Override
+    public void loadProgram(Program program) {
+        this.program = program;
+    }
+
+    @Override
+    public void tick() {
+        this.noise1 = rng1.nextInt();
+        this.noise2 = rng2.nextInt();
+        program.run(this);
+        ++dbac;
     }
 
     private static final int[] CONSTS = new int[] { 0, 1, 2, 3, 4, 8, 0x10, 0x20, 0x100, 0x10000, 0x80000, 0x10000000,
