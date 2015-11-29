@@ -125,9 +125,81 @@ public class InterpretedProgram implements Program {
                     wrAccAndR(dsp, instr.getRegR(), r);
                 }
                 break;
-
+                case Opcodes.LOG: {
+                    // A is linear input, X is max_exp, Y is sign_reg
+                    boolean negative = la < 0;
+                    int lin = negative ? -a : a;
+                    int shifts = 0;
+                    while (lin > 0 && shifts >= x) {
+                        lin = lin << 1;
+                        ++shifts;
+                    }
+                    int exp = x - shifts;
+                    if (exp < 0) {
+                        exp = 0;
+                    } else {
+                        exp += 1;
+                        lin = lin << 1;
+                    }
+                    int expbits = expBits(x);
+                    lin = lin >>> expbits + 1;
+                    exp = exp << 31 - expbits;
+                    r = exp | lin;
+                    /*
+                     * y - sign_reg
+                     * 00b - r -> r
+                     * 01b - r -> abs(r)
+                     * 10b - r -> -abs(r)
+                     * 11b - r -> -r
+                     */
+                    int sign = negative ? ~(y & 0x1) : (y & 0x2) >> 1;
+                    r |= sign << 31;
+                    wrAccAndR(dsp, instr.getRegR(), r);
+                }
+                case Opcodes.EXP: {
+                    // A is logarithmic input, X is max_exp, Y is sign_reg
+                    boolean sign = a < 0;
+                    int log = a & 0x7fffffff;
+                    /*
+                     * Ok, we can't recover the sign, so we can't reverse
+                     * the sign_reg transformation. Soo... let's do it forward again!
+                     */
+                    boolean negative = sign ? ((y & 0x1) == 0) : ((y & 0x2) == 2);
+                    int expbits = expBits(x);
+                    int linbits = 31 - expbits;
+                    int exp = log >>> linbits;
+                    int lin = log & ((1 << linbits) - 1);
+                    lin = lin << expbits + 1;
+                    if (exp == 0) {
+                        exp += 1;
+                    } else {
+                        lin = lin >>> 1;
+                        lin |= 0x80000000;
+                    }
+                    int shifts = x - exp;
+                    lin = lin >>> shifts;
+                    r = negative ? -lin : lin;
+                    wrAccAndR(dsp, instr.getRegR(), r);
+                }
+                break;
+                case Opcodes.INTERP:
+                    acc = la + (lx * (ly - la) >> 31);
+                    wrAccAndR(dsp, instr.getRegR(), acc);
+                    break;
+                case Opcodes.SKIP:
+                    // TODO: This is complicated, but we should implement it one day.
+                    break;
             }
         }
+    }
+
+    private static int expBits(int maxExp) {
+        int expbits = 0;
+        while (maxExp > 0) {
+            maxExp = maxExp >>> 1;
+            ++expbits;
+        }
+        return expbits;
     }
 
     private static void wrAccAndR(DSP dsp, short regR, long acc) {
