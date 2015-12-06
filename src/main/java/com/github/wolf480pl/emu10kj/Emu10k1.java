@@ -18,9 +18,12 @@
  */
 package com.github.wolf480pl.emu10kj;
 
-import java.util.Random;
+import static com.github.wolf480pl.emu10kj.AddressSpaceUtils.arr;
+import static com.github.wolf480pl.emu10kj.AddressSpaceUtils.empty;
+import static com.github.wolf480pl.emu10kj.AddressSpaceUtils.split;
+import static com.github.wolf480pl.emu10kj.AddressSpaceUtils.tram;
 
-import static com.github.wolf480pl.emu10kj.AddressSpaceUtils.*;
+import java.util.Random;
 
 public class Emu10k1 implements DSP {
     public static final short GPR_COUNT = 256;
@@ -66,21 +69,24 @@ public class Emu10k1 implements DSP {
     private final int[] itramAddr = new int[ITRAM_REGS];
     private final int[] xtramAddr = new int[XTRAM_REGS];
     private final TRAM iTram = new TRAM(ITRAM_SIZE);
-    private final TRAM xTram;
+    private final AddressSpace xTram;
     private final AddressSpace dspSpace;
 
-    public Emu10k1(IO fxbus, IO extIO, TRAM xTram) {
+    public Emu10k1(IO fxbus, IO extIO, AddressSpace xTram) {
         this.fxbus = fxbus;
         this.extIO = extIO;
         this.xTram = xTram;
-        this.dspSpace = split(2, 
-                split(2, 
-                        split(4, fxbus.inputSpace(), extIO.inputSpace(), extIO.outputSpace(), fxbus.outputSpace()),
-                        split(1, new SysSpace(), empty()),
+        this.dspSpace = split(10, 2,
+                split(8, 2,
+                        split(6, 2, fxbus.inputSpace(), extIO.inputSpace(), extIO.outputSpace(), fxbus.outputSpace()),
+                        split(6, 1, new SysSpace(), empty()),
                         empty(), empty()),
                 arr(gpr),
-                split(1, arr(itramAddr), arr(xtramAddr)),
-                split(1, tram(iTram, tramOffset, itramAddr), tram(xTram, tramOffset, xtramAddr)));
+                split(8, 1, arr(itramAddr), arr(xtramAddr)),
+                split(8, 1, tram(iTram, tramOffset, itramAddr), tram(xTram, tramOffset, xtramAddr)));
+
+        this.rng1 = new Random();
+        this.rng2 = new Random();
     }
 
     @Override
@@ -118,7 +124,7 @@ public class Emu10k1 implements DSP {
     private static final int[] CONSTS = new int[] { 0, 1, 2, 3, 4, 8, 0x10, 0x20, 0x100, 0x10000, 0x80000, 0x10000000,
             0x20000000, 0x40000000, 0x80000000, 0x7fffffff, 0xffffffff, 0xfffffffe, 0xc0000000, 0x4f1bbcdc, 0x5a7ef9db, 0x00100000 };
     public static final Constants CONSTANTS = new Constants(CONSTS);
-    
+
     protected class SysSpace implements AddressSpace {
         public static final int L_ACCU = ACCU - CONST_START;
         public static final int L_CCR = CCR - CONST_START;
@@ -169,7 +175,7 @@ public class Emu10k1 implements DSP {
                      * No reason to write to these, as they'll get
                      * immediately overwriten (during the same instruction)
                      */
-                     // falls thru to NOISE
+                    // falls thru to NOISE
                 case L_NOISE1:
                 case L_NOISE2:
                     // read only
@@ -189,7 +195,7 @@ public class Emu10k1 implements DSP {
             }
         }
     }
-    
+
     protected class TramOffset implements TramSpace.OffsetReg {
         @Override
         public int get() {

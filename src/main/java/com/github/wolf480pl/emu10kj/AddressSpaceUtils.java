@@ -20,26 +20,26 @@ package com.github.wolf480pl.emu10kj;
 import com.github.wolf480pl.emu10kj.TramSpace.OffsetReg;
 
 public class AddressSpaceUtils {
-    
+
     private AddressSpaceUtils() {
     }
-    
+
     public static AddressSpace arr(int[] backend) {
         return new ArrayAddressSpace(backend);
     }
-    
+
     public static AddressSpace arr(int size) {
         return new ArrayAddressSpace(size);
     }
-    
+
     public static AddressSpace empty() {
         return arr(0); // ArrayAddressSpace defaults to zero if out of bounds
     }
-    
-    public static AddressSpace split(int bits, AddressSpace... spaces) {
-        return new SplitAddressSpace(bits, spaces);
+
+    public static AddressSpace split(int width, int bits, AddressSpace... spaces) {
+        return new SplitAddressSpace(32 - width, bits, spaces);
     }
-    
+
     public static AddressSpace tram(AddressSpace backend, OffsetReg offset, int[] addrRegs) {
         return new TramSpace(backend, offset, addrRegs);
     }

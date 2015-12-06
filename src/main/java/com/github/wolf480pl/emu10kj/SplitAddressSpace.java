@@ -21,26 +21,32 @@ import java.util.Arrays;
 
 public class SplitAddressSpace implements AddressSpace {
     private final int bits;
+    private final int shift;
     private final int size;
+    private final int himask;
+    private final int lomask;
     private final AddressSpace[] subspaces;
 
-    public SplitAddressSpace(int bits, AddressSpace... subspaces) {
+    public SplitAddressSpace(int skip, int bits, AddressSpace... subspaces) {
         this.bits = bits;
+        this.shift = 32 - (skip + bits);
         this.size = 1 << bits;
+        this.himask = size - 1;
+        this.lomask = (1 << shift) - 1;
         this.subspaces = Arrays.copyOf(subspaces, size);
     }
 
     @Override
     public int read(int addr) {
-        int high = addr >>> (32 - bits);
-        int low = addr & (size - 1);
+        int high = addr >>> shift;
+        int low = addr & lomask;
         return subspaces[high].read(low);
     }
 
     @Override
     public void write(int addr, int value) {
-        int high = addr >>> (32 - bits);
-        int low = addr & (size - 1);
+        int high = (addr >>> shift); // & himask;
+        int low = addr & lomask;
         subspaces[high].write(low, value);
     }
 
