@@ -49,4 +49,7 @@ public class Instruction {
         return regY;
     }
 
+    public static Instruction instr(byte opcode, int r, int a, int x, int y) {
+        return new Instruction(opcode, (short) r, (short) a, (short) x, (short) y);
+    }
 }
