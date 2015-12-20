@@ -17,21 +17,31 @@
  */
 package com.github.wolf480pl.emu10kj;
 
-public class TRAM implements AddressSpace {
-    private final int size;
+public class ArrayAddressSpace implements AddressSpace {
     private final int[] data;
 
-    public TRAM(int size) {
-        this.size = size;
-        this.data = new int[size];
+    public ArrayAddressSpace(int[] backend) {
+        this.data = backend;
     }
-
+    
+    public ArrayAddressSpace(int size) {
+        this.data = new int[size]; 
+    }
+    
+    @Override
     public int read(int addr) {
-        return data[addr % size];
+        if (addr >= data.length) {
+            return 0;
+        }
+        return data[addr];
     }
 
+    @Override
     public void write(int addr, int value) {
-        data[addr % size] = value;
+        if (addr >= data.length) {
+            return;
+        }
+        data[addr] = value;
     }
 
 }

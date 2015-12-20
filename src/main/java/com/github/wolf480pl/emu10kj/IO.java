@@ -22,8 +22,12 @@ public interface IO {
     int readIn(int idx);
 
     void writeIn(int idx, int value);
+    
+    AddressSpace inputSpace();
 
     int readOut(int idx);
 
     void writeOut(int idx, int value);
+    
+    AddressSpace outputSpace();
 }

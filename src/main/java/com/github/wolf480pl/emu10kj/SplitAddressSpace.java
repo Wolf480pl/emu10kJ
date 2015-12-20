@@ -17,21 +17,31 @@
  */
 package com.github.wolf480pl.emu10kj;
 
-public class TRAM implements AddressSpace {
+import java.util.Arrays;
+
+public class SplitAddressSpace implements AddressSpace {
+    private final int bits;
     private final int size;
-    private final int[] data;
+    private final AddressSpace[] subspaces;
 
-    public TRAM(int size) {
-        this.size = size;
-        this.data = new int[size];
+    public SplitAddressSpace(int bits, AddressSpace... subspaces) {
+        this.bits = bits;
+        this.size = 1 << bits;
+        this.subspaces = Arrays.copyOf(subspaces, size);
     }
 
+    @Override
     public int read(int addr) {
-        return data[addr % size];
+        int high = addr >>> (32 - bits);
+        int low = addr & (size - 1);
+        return subspaces[high].read(low);
     }
 
+    @Override
     public void write(int addr, int value) {
-        data[addr % size] = value;
+        int high = addr >>> (32 - bits);
+        int low = addr & (size - 1);
+        subspaces[high].write(low, value);
     }
 
 }

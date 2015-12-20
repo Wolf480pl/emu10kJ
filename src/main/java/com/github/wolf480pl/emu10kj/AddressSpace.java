@@ -17,21 +17,9 @@
  */
 package com.github.wolf480pl.emu10kj;
 
-public class TRAM implements AddressSpace {
-    private final int size;
-    private final int[] data;
+public interface AddressSpace {
 
-    public TRAM(int size) {
-        this.size = size;
-        this.data = new int[size];
-    }
+    int read(int addr);
 
-    public int read(int addr) {
-        return data[addr % size];
-    }
-
-    public void write(int addr, int value) {
-        data[addr % size] = value;
-    }
-
+    void write(int addr, int value);
 }

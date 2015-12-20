@@ -17,21 +17,35 @@
  */
 package com.github.wolf480pl.emu10kj;
 
-public class TRAM implements AddressSpace {
-    private final int size;
-    private final int[] data;
-
-    public TRAM(int size) {
-        this.size = size;
-        this.data = new int[size];
+public class TramSpace implements AddressSpace {
+    private final AddressSpace backend;
+    private final int[] addrRegs;
+    private final OffsetReg offset;
+    
+    public TramSpace(AddressSpace backend, OffsetReg offset, int[] addrRegs) {
+        this.backend = backend;
+        this.addrRegs = addrRegs;
+        this.offset = offset;
     }
 
+    @Override
     public int read(int addr) {
-        return data[addr % size];
+        if (addr >= addrRegs.length) {
+            return 0;
+        }
+        return backend.read(offset.get() + addrRegs[addr]);
     }
 
+    @Override
     public void write(int addr, int value) {
-        data[addr % size] = value;
+        if (addr >= addrRegs.length) {
+            return;
+        }
+        backend.write(offset.get() + addrRegs[addr], value);
+    }
+    
+    public interface OffsetReg {
+        int get();
     }
 
 }
