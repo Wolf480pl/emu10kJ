@@ -29,6 +29,10 @@ public interface DSP {
 
     void writeAccu(long value);
 
+    Accumulator getAccu();
+
+    boolean isAccuAddr(short address);
+
     long readMemOrAccuDsp(short address);
 
     void loadProgram(Program program);

@@ -59,7 +59,7 @@ public class Emu10k1 implements DSP {
     public static final short XTRAM_ADDR_END = XTRAM_ADDR_START + XTRAM_REGS - 1;
 
     private final IO fxbus, extIO;
-    private long accu;
+    private Accumulator accu = new Accumulator();
     private int ccr;
     private Random rng1, rng2;
     private int noise1, noise2;
@@ -107,12 +107,22 @@ public class Emu10k1 implements DSP {
 
     @Override
     public long readAccu() {
-        return accu;
+        return accu.read();
     }
 
     @Override
     public void writeAccu(long value) {
-        accu = value;
+        accu.write(value);
+    }
+
+    @Override
+    public void getAccu() {
+        return accu;
+    }
+
+    @Override
+    public boolean isAccuAddr(short addr) {
+        return addr == ACCU;
     }
 
     @Override

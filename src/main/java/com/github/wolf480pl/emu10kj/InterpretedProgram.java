@@ -212,11 +212,23 @@ public class InterpretedProgram implements Program {
         dsp.writeAccu(r);
     }
 
+    private static void accAndWrR(DSP dsp, short regR, long val, boolean sat) {
+        final Accumulator accu = dsp.getAccu();
+        accu.add(val);
+        if (!dsp.isAccuAddr(regR)) {
+            long r = accu.read();
+            if (sat) {
+                r = clamp(r);
+            }
+            dsp.writeMemDsp(regR, (int) r);
+        }
+    }
+
     private static void mac(long acc, DSP dsp, short regR, long x, long y, int shift, boolean neg, boolean sat) {
         if (neg) {
             x = -x;
         }
-        acc += (x * y) >> shift;
+        long val = (x * y) >> shift;
         dsp.writeMemDsp(regR, (int) (sat ? clamp(acc) : acc));
         dsp.writeAccu(acc);
     }
