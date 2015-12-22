@@ -116,7 +116,7 @@ public class Emu10k1 implements DSP {
     }
 
     @Override
-    public void getAccu() {
+    public Accumulator getAccu() {
         return accu;
     }
 
@@ -128,7 +128,7 @@ public class Emu10k1 implements DSP {
     @Override
     public long readMemOrAccuDsp(short address) {
         if (address == ACCU) {
-            return accu;
+            return accu.read();
         }
         return readMemDsp(address);
     }
