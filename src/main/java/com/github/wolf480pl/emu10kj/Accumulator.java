@@ -17,8 +17,28 @@ package com.github.wolf480pl.emu10kj;
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * A 67-bit accumulator register
+ *
+ * NOTE: The implementation doesn't strictly adhere to as10k1 documentation
+ *       but it does what makes sense to the author. If compatibility issues
+ *       are discovered, this implementation might change.
+ *
+ *  6           6           3   2           0
+ *  7 6 5 4 3 2 1           1 0 9         1 0
+ * +-+-+-+-+-+-+-+- - - -+-+-+-+-+- - - -+-+-+
+ * |S| Guard |   High Accu   |   Low Accu    |
+ * +-+-+-+-+-+-+-+- - - -+-+-+-+-+- - - -+-+-+
+ *
+ * S - sign
+ * Guard - 4 guard bits
+ * High Accu - 31 high accumulator bits (retrived by MACS and ACC3, along with sign)
+ * Low Accu - 31 low accumulator bits (retrived by MACINTS, along with sign)
+ */
 public class Accumulator {
     public static final int BITS = 67 - 1; // Subtract the sign bit
+    public static final int INT_SIGN_MASK = 1 << 31;
+    public static final long INT_SIGN_MASK_L = 1L << 31;
 
     /**
      * Little endian absolute value
@@ -31,7 +51,38 @@ public class Accumulator {
     }
 
     public long read() {
+        /* Note: I know the highest bit of value[1] is being treated as a sign.
+         *       This is the correct behavior. It may be useful for
+         *       not-overflowing a sum of >2 numbers, where partial sums
+         *       overflow, but the total doesn't.
+         *
+         *       If you ever doubt this works correctly, think of what happens
+         *       to an 8-bit register when you do the following:
+         *       127 + 1, -127 - 1, -127 - 2, and copare the results with what
+         *       this method would do if the accumulator was 8-bit, with the
+         *       sign bit as a separate boolean.
+         */
         long x = value[1] << 32 | value[0];
+        return negative ? -x : x;
+    }
+
+    public long readSat() {
+        if (value[2] != 0 || (value[1] & INT_SIGN_MASK) != 0) {
+            // Above long limit - saturate!
+            return negative ? Long.MIN_VALUE : Long.MAX_VALUE;
+        }
+        return read();
+    }
+
+    public int readLow() {
+        long lx = readSat() & ~INT_SIGN_MASK_L;
+        int x = (int) lx;
+        return negative ? -x : x;
+    }
+
+    public int readHi() {
+        long lx = (readSat() >> 31) & ~INT_SIGN_MASK_L;
+        int x = (int) lx;
         return negative ? -x : x;
     }
 
