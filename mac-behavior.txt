@@ -1,0 +1,8 @@
+accu = A;
+accu += X * Y; // accu -= X * Y
+R = accu.read{Low,Hi}{Sat,Wrap}();
+
+or
+
+accu += X * Y;
+R = A

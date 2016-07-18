@@ -72,7 +72,10 @@ public class InterpretedProgram implements Program {
                 case Opcodes.MACSN:
                 case Opcodes.MACW:
                 case Opcodes.MACWN:
-                    mac(la, dsp, instr.getRegR(), lx, ly, 31, (opcode & (byte) 0x1) != 0, (opcode & (byte) 0x2) == 0);
+                    loadA(dsp, instr.getRegA());
+                    mac(dsp, lx, ly, (opcode & (byte) 0x1) != 0);
+                    writeR(dsp, instr.getRegR(), (opcode & (byte) 0x2) == 0, true)
+                    //mac(la, dsp, instr.getRegR(), lx, ly, 31, (opcode & (byte) 0x1) != 0, (opcode & (byte) 0x2) == 0);
                     break;
                 case Opcodes.MACINTS:
                 case Opcodes.MACINTW:
@@ -82,22 +85,34 @@ public class InterpretedProgram implements Program {
                      * occurs around bit 30 instead of bit 31 (I have no idea
                      * why this would be useful).
                      */
-                    mac(la, dsp, instr.getRegR(), lx, ly, 0, false, (opcode & (byte) 0x1) == 0);
+                    loadA(dsp, instr.getRegA());
+                    mac(dsp, lx, ly, false);
+                    writeR(dsp, instr.getRegR(), (opcode & (byte) 0x1) == 0, false);
+                    //mac(la, dsp, instr.getRegR(), lx, ly, 0, false, (opcode & (byte) 0x1) == 0);
                     break;
                 case Opcodes.ACC3:
+                    /*
                     acc = la + lx + ly;
                     dsp.writeMemDsp(instr.getRegR(), (int) clamp(acc));
                     dsp.writeAccu(acc);
-
+                    */
+                    loadA(dsp, instr.getRegA());
+                    final Accumulator accu = dsp.getAccu();
+                    accu.add(lx);
+                    accu.add(ly);
+                    dsp.writeR(dsp, instr.getRegR(), true, false);
                     break;
                 case Opcodes.MACMV:
                     // Even if A is accu and R is accu, it will get overwritten
                     // later anyway, so don't bother with longs
+                    // TODO: Does it wrap or saturate?
                     dsp.writeMemDsp(instr.getRegR(), a);
-                    // TODO: You sure there's no shift here?
+                    mac(dsp, lx, ly, false);
+                    /*
                     acc = dsp.readAccu();
                     acc += lx * ly;
                     dsp.writeAccu(acc);
+                    */
                     break;
                 case Opcodes.ANDXOR:
                     // Even if A is accu, the higher bits will be zero after
@@ -224,6 +239,25 @@ public class InterpretedProgram implements Program {
         }
     }
 
+    private static void writeR(DSP dsp, short regR, boolean sat, boolean hi) {
+        final Accumulator accu = dsp.getAccu();
+        if (!dsp.isAccuAddr(regR)) {
+            final int r;
+            if (hi) {
+                r = sat ? accu.readHiSat() : accu.readHiWrap();
+            } else {
+                r = sat ? accu.readLowSat() : accu.readLowWrap();
+            }
+            dsp.writeMemDsp(regR, r);
+        }
+    }
+
+    private static void loadA(DSP dsp, short regA) {
+        if (!dsp.isAccuAddr(regA)) {
+            dsp.getAccu().write(dsp.readMemDsp(regA));
+        }
+    }
+
     private static void mac(long acc, DSP dsp, short regR, long x, long y, int shift, boolean neg, boolean sat) {
         if (neg) {
             x = -x;
@@ -231,6 +265,12 @@ public class InterpretedProgram implements Program {
         long val = (x * y) >> shift;
         dsp.writeMemDsp(regR, (int) (sat ? clamp(acc) : acc));
         dsp.writeAccu(acc);
+    }
+
+    private static void mac(DSP dsp, long x, long y, boolean neg) {
+        final Accumulator accu = dsp.getAccu();
+        final long xy = x * y;
+        accu.add(neg ? -xy : xy);
     }
 
     private static long clamp(long x) {

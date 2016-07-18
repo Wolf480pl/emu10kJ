@@ -74,16 +74,32 @@ public class Accumulator {
         return read();
     }
 
-    public int readLow() {
-        long lx = readSat() & ~INT_SIGN_MASK_L;
-        int x = (int) lx;
+    public int readLowWrap() {
+        int x = value[0];
+        // This is correct, see read()
         return negative ? -x : x;
     }
 
-    public int readHi() {
-        long lx = (readSat() >> 31) & ~INT_SIGN_MASK_L;
-        int x = (int) lx;
+    public int readLowSat() {
+        if (value[2] != 0 || value[1] != 0 || (value[0] & INT_SIGN_MASK) != 0) {
+            // Overflow, so we saturate
+            return negative ? Integer.MIN_VALUE : Integer.MAX_VALUE;
+        }
+        return readLowWrap();
+    }
+
+    public int readHiWrap() {
+        int x = (value[1] << 1) | (value[0] >>> 31);
+        // This is correct, see read()
         return negative ? -x : x;
+    }
+
+    public int readHiSat() {
+        if (value[2] != 0 || (value[1] & (INT_SIGN_MASK >> 1)) != 0) {
+            // Overflow, so we saturate
+            return negative ? Integer.MIN_VALUE : Integer.MAX_VALUE;
+        }
+        return readHiWrap();
     }
 
     public void write(long val) {
