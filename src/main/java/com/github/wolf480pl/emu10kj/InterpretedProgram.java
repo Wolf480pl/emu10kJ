@@ -74,7 +74,7 @@ public class InterpretedProgram implements Program {
                 case Opcodes.MACWN:
                     loadA(dsp, instr.getRegA());
                     mac(dsp, lx, ly, (opcode & (byte) 0x1) != 0);
-                    writeR(dsp, instr.getRegR(), (opcode & (byte) 0x2) == 0, true)
+                    writeR(dsp, instr.getRegR(), (opcode & (byte) 0x2) == 0, true);
                     //mac(la, dsp, instr.getRegR(), lx, ly, 31, (opcode & (byte) 0x1) != 0, (opcode & (byte) 0x2) == 0);
                     break;
                 case Opcodes.MACINTS:
@@ -95,12 +95,12 @@ public class InterpretedProgram implements Program {
                     acc = la + lx + ly;
                     dsp.writeMemDsp(instr.getRegR(), (int) clamp(acc));
                     dsp.writeAccu(acc);
-                    */
+                     */
                     loadA(dsp, instr.getRegA());
                     final Accumulator accu = dsp.getAccu();
                     accu.add(lx);
                     accu.add(ly);
-                    dsp.writeR(dsp, instr.getRegR(), true, false);
+                    writeR(dsp, instr.getRegR(), true, false);
                     break;
                 case Opcodes.MACMV:
                     // Even if A is accu and R is accu, it will get overwritten
@@ -112,7 +112,7 @@ public class InterpretedProgram implements Program {
                     acc = dsp.readAccu();
                     acc += lx * ly;
                     dsp.writeAccu(acc);
-                    */
+                     */
                     break;
                 case Opcodes.ANDXOR:
                     // Even if A is accu, the higher bits will be zero after
@@ -157,8 +157,8 @@ public class InterpretedProgram implements Program {
                         lin = lin << 1;
                     }
                     int expbits = expBits(x);
-                    lin = lin >>> expbits + 1;
-                    exp = exp << 31 - expbits;
+                    lin = lin >>> (expbits + 1);
+                    exp = exp << (31 - expbits);
                     r = exp | lin;
                     /*
                      * y - sign_reg
@@ -167,7 +167,7 @@ public class InterpretedProgram implements Program {
                      * 10b - r -> -abs(r)
                      * 11b - r -> -r
                      */
-                    int sign = negative ? ~(y & 0x1) : (y & 0x2) >> 1;
+                    int sign = negative ? ~(y & 0x1) : ((y & 0x2) >> 1);
                     r |= sign << 31;
                     wrAccAndR(dsp, instr.getRegR(), r);
                 }
@@ -184,7 +184,7 @@ public class InterpretedProgram implements Program {
                     int linbits = 31 - expbits;
                     int exp = log >>> linbits;
                     int lin = log & ((1 << linbits) - 1);
-                    lin = lin << expbits + 1;
+                    lin = lin << (expbits + 1);
                     if (exp == 0) {
                         exp += 1;
                     } else {
@@ -198,7 +198,7 @@ public class InterpretedProgram implements Program {
                 }
                 break;
                 case Opcodes.INTERP:
-                    acc = la + (lx * (ly - la) >> 31);
+                    acc = la + ((lx * (ly - la)) >> 31);
                     wrAccAndR(dsp, instr.getRegR(), acc);
                     break;
                 case Opcodes.SKIP:
