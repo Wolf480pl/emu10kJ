@@ -72,7 +72,8 @@ public class JackMain implements SimpleAudioClient.Processor {
                 float val1 = val0 * Integer.MAX_VALUE;
                 in.write(i, (int) val1);
                 if (i == 0) {
-                    // System.out.println("in " + val0 + " " + (int) val1);
+                    // System.out.printf("in %f %08x\n", val0, (int) val1);
+                    //System.out.println("in " + val0 + " " + Integer.toHexString((int) val1));
                 }
             }
 
@@ -84,7 +85,8 @@ public class JackMain implements SimpleAudioClient.Processor {
                 float val2 = val1 / (Integer.MAX_VALUE);
                 outputs[i].put(val2);
                 if (i == 0) {
-                    // System.out.println("out " + val0 + " " + val2);
+                    // System.out.printf("out %08x %f\n", val0, val2);
+                    //System.out.println("out " + Integer.toHexString(val0) + " " + val2);
                 }
             }
         }
