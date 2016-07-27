@@ -72,7 +72,7 @@ public class InterpretedProgram implements Program {
                 case Opcodes.MACSN:
                 case Opcodes.MACW:
                 case Opcodes.MACWN:
-                    loadA(dsp, instr.getRegA());
+                    loadA(dsp, instr.getRegA(), true);
                     mac(dsp, lx, ly, (opcode & (byte) 0x1) != 0);
                     writeR(dsp, instr.getRegR(), (opcode & (byte) 0x2) == 0, true);
                     //mac(la, dsp, instr.getRegR(), lx, ly, 31, (opcode & (byte) 0x1) != 0, (opcode & (byte) 0x2) == 0);
@@ -85,7 +85,7 @@ public class InterpretedProgram implements Program {
                      * occurs around bit 30 instead of bit 31 (I have no idea
                      * why this would be useful).
                      */
-                    loadA(dsp, instr.getRegA());
+                    loadA(dsp, instr.getRegA(), false);
                     mac(dsp, lx, ly, false);
                     writeR(dsp, instr.getRegR(), (opcode & (byte) 0x1) == 0, false);
                     //mac(la, dsp, instr.getRegR(), lx, ly, 0, false, (opcode & (byte) 0x1) == 0);
@@ -96,7 +96,7 @@ public class InterpretedProgram implements Program {
                     dsp.writeMemDsp(instr.getRegR(), (int) clamp(acc));
                     dsp.writeAccu(acc);
                      */
-                    loadA(dsp, instr.getRegA());
+                    loadA(dsp, instr.getRegA(), false);
                     final Accumulator accu = dsp.getAccu();
                     accu.add(lx);
                     accu.add(ly);
@@ -252,9 +252,14 @@ public class InterpretedProgram implements Program {
         }
     }
 
-    private static void loadA(DSP dsp, short regA) {
+    private static void loadA(DSP dsp, short regA, boolean hi) {
         if (!dsp.isAccuAddr(regA)) {
-            dsp.getAccu().write(dsp.readMemDsp(regA));
+            final int val = dsp.readMemDsp(regA);
+            if (hi) {
+                dsp.getAccu().writeHi(val);
+            } else {
+                dsp.getAccu().writeLow(val);
+            }
         }
     }
 

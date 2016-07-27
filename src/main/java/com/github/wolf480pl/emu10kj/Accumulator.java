@@ -25,7 +25,7 @@ package com.github.wolf480pl.emu10kj;
  *       are discovered, this implementation might change.
  *
  *  6           6           3   2           0
- *  7 6 5 4 3 2 1           1 0 9         1 0
+ *  6 5 4 3 2 1 0           1 0 9         1 0
  * +-+-+-+-+-+-+-+- - - -+-+-+-+-+- - - -+-+-+
  * |S| Guard |   High Accu   |   Low Accu    |
  * +-+-+-+-+-+-+-+- - - -+-+-+-+-+- - - -+-+-+
@@ -58,11 +58,11 @@ public class Accumulator {
          *
          *       If you ever doubt this works correctly, think of what happens
          *       to an 8-bit register when you do the following:
-         *       127 + 1, -127 - 1, -127 - 2, and copare the results with what
+         *       127 + 1, -127 - 1, -127 - 2, and compare the results with what
          *       this method would do if the accumulator was 8-bit, with the
          *       sign bit as a separate boolean.
          */
-        long x = value[1] << 32 | value[0];
+        long x = ((long) value[1]) << 32 | (value[0] & 0xffffffffL);
         return negative ? -x : x;
     }
 
@@ -110,8 +110,16 @@ public class Accumulator {
             negative = false;
         }
         value[0] = (int) val;
-        value[1] = (int) val >>> 32;
+        value[1] = (int) (val >>> 32);
         value[2] = 0;
+    }
+
+    public void writeLow(int val) {
+        write(val);
+    }
+
+    public void writeHi(int val) {
+        write(((long) val) << 31);
     }
 
     public void add(long val) {
@@ -126,6 +134,7 @@ public class Accumulator {
         long hi = val >>> 32;
         if (valNeg == negative) {
             add(hi, low);
+            return;
         }
         int cmp = compareAbs(hi, low);
         if (cmp == 0) {
